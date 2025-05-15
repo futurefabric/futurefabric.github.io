@@ -117,9 +117,10 @@ body {
 }
 
 .comparison-card__header {
+  color: white;
   background-color: #062D22;
-  height: 80px;
   width: 100%;
+  padding: 16px;
 }
 .comparison-card__content {
   padding: 16px;
@@ -130,7 +131,7 @@ body {
 .comparison-card__block {
   width: 100%;
   padding: 16px;
-  gap: 8px;
+  gap: 12px;
   display: flex;
   flex-direction: column;
   border: 1px solid #E6E9E8;
@@ -141,9 +142,28 @@ body {
   background-color: #F7F9F8;
 }
 
+.comparison-card__pdp-cta a {
+  background-color: #F7F9F8;
+  border: 1px solid #E6E9E8;
+  border-radius: 4px;
+  color: #000;
+  display: flex;
+  padding: 8px;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  margin-bottom: 24px;
+}
+
+.comparison-card:hover .comparison-card__pdp-cta a {
+  background-color: #00EBC8;
+  border: 1px solid #00EBC8;
+  color: #000;
+}
+
 .comparison-card__block-item {
   width: 100%;
-  aspect-ratio: 10/1;
+  aspect-ratio: 20/1;
   background-color: #F7F9F8;
 }
 
