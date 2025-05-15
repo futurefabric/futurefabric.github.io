@@ -7,7 +7,9 @@ document.addEventListener("DOMContentLoaded", function () {
   const comparisonCardHeader = document.querySelector(".comparison-card__header");
   const prevButton = document.querySelector(".pager-previous");
   const nextButton = document.querySelector(".pager-next");
+  const comparisonCardHeroImg = document.querySelector(".comparison-card__block--hero-img");
   
+  comparisonCardHeroImg.classList.add(`bg-${projectId}`);
   breadcrumbProjectName.textContent = `Project ${projectId}`;
   comparisonCardHeader.textContent = `Project ${projectId}`;
 

@@ -136,6 +136,7 @@ body {
 .comparison-card__block--hero-img {
   aspect-ratio: 16/9;
   background-color: #F7F9F8;
+  border-radius: 4px;
 }
 
 .comparison-card__pdp-cta a {
@@ -152,9 +153,9 @@ body {
 }
 
 .comparison-card:hover .comparison-card__pdp-cta a {
-  background-color: #00EBC8;
-  border: 1px solid #00EBC8;
-  color: #000;
+  background-color: #062D22;
+  border: 1px solid #062D22;
+  color: #fff;
 }
 
 .comparison-card__block-item {
@@ -192,4 +193,27 @@ body {
 .shared-site .comparison-card__header {
   font-size: 24px;
 }
+
+.bg-1 {
+  background-color: #22636E;
+}
+
+.bg-2 {
+  background-color: #688D3E;
+}
   
+.bg-3 {
+  background-color: #3A9E5F;
+}
+
+.bg-4 {
+  background-color: #67DADD;
+}
+  
+.bg-5 {
+  background-color: #5B9DEE;
+}
+  
+.bg-6 {
+  background-color: #2FC7D1;
+}
