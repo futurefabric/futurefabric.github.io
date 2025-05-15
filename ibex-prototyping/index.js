@@ -3,7 +3,6 @@ document.addEventListener("DOMContentLoaded", function () {
   const nextButton = document.querySelector(".pager-next");
   const comparisonCards = document.querySelector(".comparison-cards");
   const comparisonCard = document.querySelector(".comparison-card");
-
   const scrollSnapWidth = () => {
     return comparisonCard.offsetWidth;
   };

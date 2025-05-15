@@ -80,6 +80,7 @@ body {
   border: 1px solid #E6E9E8;
   background: #F7F9F8;
   cursor: pointer;
+  color: #000;
 }
 
 .comparison-container {
@@ -109,11 +110,6 @@ body {
   border-radius: 8px;
   overflow: hidden;
   scroll-snap-align: start;
-}
-
-.comparison-card:last-of-type {
-  position: relative;
-  margin-right: 48px;
 }
 
 .comparison-card__header {
@@ -170,3 +166,30 @@ body {
 .comparison-card__block-title {
   margin-bottom: 8px;
 }
+
+.comparison-info {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-direction: row;
+}
+
+.breadcrumb-link {
+  color: #000;
+}
+
+.shared-site {
+  position: relative;
+  padding-top: calc(60px + 24px);
+  padding-bottom: 24px;
+  padding-left: 24px;
+  padding-right: 24px;
+  max-width: 60rem;
+  width: 100%;
+  margin: 0 auto;
+}
+
+.shared-site .comparison-card__header {
+  font-size: 24px;
+}
+  
