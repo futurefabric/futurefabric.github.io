@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liveness Badge Prototype 01</title>
+    <style type="text/css">
+
+      body {
+        background-color: #efefef;
+        width: 100dvw;
+        height: 90dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .mouse-control-area {
+        background-color: white;
+        border: 3px dashed #ccc;
+        width: 400px;
+        height: 400px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .badge-container {
+        width: 88px; /* 88px 176px */
+        aspect-ratio: 88/54;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 5px;
+        overflow: hidden;
+      }
+      .badge {
+        position: absolute;
+        z-index: 2;
+      }
+      .badge-background {
+        position: absolute;
+        z-index: 1;
+        width: 270px; /*135px 270px*/
+        aspect-ratio: 1/1;
+        background: conic-gradient(
+            from 90deg,
+            rgba(255, 220, 0, 1) 0deg,
+            rgba(201, 151, 255, 1) 90deg,
+            rgba(253, 124, 183, 1) 180deg,
+            rgba(128, 214, 250, 1) 270deg,
+            rgba(255, 221, 0, 1) 360deg
+        );
+        background-size: cover;
+      }
+
+    </style>
+</head>
+<body>
+  <div id="mouse-control" class="mouse-control-area">
+    <div class="badge-container">
+      <svg id="badge-skew" class="badge" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 88 54" fill="none">
+        <g clip-path="url(#a)" filter="url(#b)">
+          <g clip-path="url(#c)">
+            <path fill="url(#d)" d="M22 49h44v44H22z" transform="rotate(-90 22 49)"/>
+            <rect width="38" height="38" x="25" y="8" stroke="url(#e)" rx="1"/>
+            <path fill="#000" d="M48.933 23.655a1.39 1.39 0 0 1-1.81-.735 1.36 1.36 0 0 1 .754-1.785 1.396 1.396 0 0 1 1.8.749 1.35 1.35 0 0 1-.744 1.77ZM44.533 28.483a1.39 1.39 0 0 1-1.811-.735 1.36 1.36 0 0 1 .755-1.785 1.396 1.396 0 0 1 1.8.75c.29.69-.046 1.488-.744 1.77ZM52.638 25.834a1.39 1.39 0 0 1-1.811-.735 1.36 1.36 0 0 1 .754-1.785 1.397 1.397 0 0 1 1.801.75c.29.69-.045 1.488-.744 1.771v-.002ZM55.09 29.431a1.39 1.39 0 0 1-1.811-.735 1.36 1.36 0 0 1 .755-1.785 1.396 1.396 0 0 1 1.8.75 1.35 1.35 0 0 1-.744 1.77ZM44.733 19.313l.003-.003 1.752.906v-2.544l-1.749.546-.004-.005a.922.922 0 0 0-.17-.17l-.004-.004.703-2.182h-2.527l.704 2.184-.005.004a.92.92 0 0 0-.17.17l-.004.005-1.748-.547v2.543l1.751-.906.003.003a.975.975 0 0 0 .18.177l-1.005 2.99-.003.01v.004a1.57 1.57 0 0 0-.072.472c0 .81.606 1.476 1.394 1.59.01 0 .023.004.036.005a1.505 1.505 0 0 0 .41 0c.011 0 .024-.003.035-.005a1.617 1.617 0 0 0 1.394-1.59c0-.164-.025-.323-.072-.472-.046-.15 0-.003 0-.003a.028.028 0 0 0-.003-.011l-1.005-2.99a.927.927 0 0 0 .18-.177M39.04 23.655a1.39 1.39 0 0 0 1.811-.735 1.36 1.36 0 0 0-.755-1.785 1.396 1.396 0 0 0-1.8.749 1.35 1.35 0 0 0 .744 1.77ZM35.337 25.834a1.39 1.39 0 0 0 1.81-.735 1.36 1.36 0 0 0-.753-1.785 1.398 1.398 0 0 0-1.801.75c-.29.69.045 1.488.744 1.771v-.002ZM32.883 29.431a1.39 1.39 0 0 0 1.811-.735 1.36 1.36 0 0 0-.755-1.785 1.396 1.396 0 0 0-1.8.75 1.35 1.35 0 0 0 .744 1.77Z"/>
+            <path fill="#000" d="M43.997 37.528c3.315 0 6.451.221 9.246.615.792-3.289 1.76-5.171 2.757-6.513l-1.878-.66c.186.941.216 1.378.008 1.982-.31-.298-.604-.848-.832-1.686l-.909 2.986c.553-.375.98-.618 1.468-.63-.866 1.839-1.947 2.311-2.65 2.185-.855-.155-1.248-.907-1.116-1.546.197-.905 1.139-1.14 1.577-.088.84-1.69-.585-2.217-1.504-1.717 1.41-1.387 1.572-2.619.434-4.109-1.585 1.195-1.604 2.378-.891 4.043-.926-1.044-2.367-.484-1.845 1.203.667-1.02 1.552-.379 1.413.59-.118.842-1.247 1.523-2.654 1.403-2.016-.18-2.137-1.552-2.187-2.687.495-.09 1.388.363 2.15 1.416l.28-3.167c-.827.851-1.58 1.012-2.416 1.038.279-.855 1.557-2.258 1.557-2.258h-4.01s1.278 1.4 1.557 2.258c-.835-.026-1.587-.187-2.416-1.038l.28 3.167c.762-1.053 1.655-1.505 2.15-1.416-.05 1.135-.17 2.506-2.187 2.687-1.407.12-2.536-.56-2.654-1.404-.14-.968.746-1.609 1.413-.59.52-1.687-.92-2.248-1.847-1.202.715-1.665.696-2.848-.891-4.043-1.139 1.492-.977 2.724.432 4.11-.918-.501-2.343.025-1.502 1.716.44-1.051 1.38-.815 1.578.088.133.638-.262 1.39-1.117 1.546-.7.128-1.783-.346-2.65-2.185.49.01.915.255 1.47.63l-.91-2.986c-.229.838-.522 1.388-.832 1.686-.21-.604-.18-1.042.008-1.981L32 31.63c.998 1.34 1.963 3.226 2.756 6.513 2.794-.394 5.93-.615 9.242-.615"/>
+            <path fill="#fff" fill-opacity=".25" d="m39-.434.295-.295 41.81 41.81-.295.296zM24.65-18.702 25.946-20l41.811 41.81-1.298 1.299z"/>
+          </g>
+        </g>
+        <defs>
+          <linearGradient id="d" x1="22" x2="66" y1="49" y2="93" gradientUnits="userSpaceOnUse">
+            <stop offset=".25" stop-color="#fff"/>
+            <stop offset=".75" stop-color="#AAA"/>
+          </linearGradient>
+          <linearGradient id="e" x1="63" x2="25" y1="8" y2="46" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#fff"/>
+            <stop offset="1" stop-color="#AAA"/>
+          </linearGradient>
+          <clipPath id="a">
+            <rect width="88" height="54" fill="#fff" rx="3"/>
+          </clipPath>
+          <clipPath id="c">
+            <rect width="44" height="44" x="22" y="5" fill="#fff" rx="3"/>
+          </clipPath>
+          <filter id="b" width="56" height="56" x="19" y="2" color-interpolation-filters="sRGB" filterUnits="userSpaceOnUse">
+            <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+            <feColorMatrix in="SourceAlpha" result="hardAlpha" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0"/>
+            <feOffset dx="3" dy="3"/>
+            <feGaussianBlur stdDeviation="3"/>
+            <feComposite in2="hardAlpha" operator="out"/>
+            <feColorMatrix values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+            <feBlend in2="BackgroundImageFix" result="effect1_dropShadow_31_4111"/>
+            <feBlend in="SourceGraphic" in2="effect1_dropShadow_31_4111" result="shape"/>
+          </filter>
+        </defs>
+      </svg>
+      <div class="badge-background"></div>
+    </div>
+  </div>
+  
+  
+  <script type="text/javascript">
+    document.getElementById('mouse-control').addEventListener('mousemove', function(e) {
+    var rect = this.getBoundingClientRect();
+    var x = e.clientX - rect.left; // X position within the element
+    var y = e.clientY - rect.top;  // Y position within the element
+
+    // Calculate rotation angles based on mouse position
+    var rotateX = -(y - rect.height / 2) / (rect.height / 2) * 15; // Rotate around X-axis
+    var rotateY = (x - rect.width / 2) / (rect.width / 2) * 15;    // Rotate around Y-axis
+
+    // Apply the 3D rotation to the SVG
+    var svg = document.getElementById('badge-skew');
+    svg.style.transform = `perspective(100px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+  });
+
+  </script>
+
+
+</body>
+</html>

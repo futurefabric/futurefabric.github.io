@@ -1,0 +1,115 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liveness Badge Prototype 03 — 2x</title>
+    <style type="text/css">
+
+      body {
+        background-color: #efefef;
+        width: 100dvw;
+        height: 90dvh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .mouse-control-area {
+        background-color: white;
+        border: 3px dashed #ccc;
+        width: 400px;
+        height: 400px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .badge-container {
+        position: relative;
+        width: 96px;
+        aspect-ratio: 1/1;
+        overflow: hidden;
+        border-radius: 2px;
+      }
+
+      .badge-background {
+        position: absolute;
+        top: 0%;
+        left: 0%;
+        width: 100%;
+        height: 100%;
+        z-index: 1; /* Under the SVG */
+      }
+
+      .badge-background img {
+        position: absolute;
+      }
+
+      .badge {
+        position: relative;
+        z-index: 2; /* Above the background */
+      }
+
+    </style>
+</head>
+<body>
+  <div id="mouse-control" class="mouse-control-area">
+    <div class="badge-container">
+      <div class="badge-background">
+        <img src="spectrum.png" />
+      </div>
+      <svg class="badge" xmlns="http://www.w3.org/2000/svg" viewBox="0,0,48,48" fill="none">
+        <g clip-path="url(#a)">
+          <circle cx="24" cy="24" r="15" fill="#fff"/>
+          <path fill="#121212" fill-rule="evenodd" d="M0 48V0h48v48H0Zm28.933-28.358a1.39 1.39 0 0 1-1.81-.735 1.36 1.36 0 0 1 .754-1.785 1.396 1.396 0 0 1 1.8.749c.29.69-.045 1.488-.744 1.77Zm-6.212 4.093a1.39 1.39 0 0 0 1.811.736 1.351 1.351 0 0 0 .745-1.772 1.396 1.396 0 0 0-1.8-.748 1.36 1.36 0 0 0-.756 1.784Zm9.917-1.914a1.39 1.39 0 0 1-1.811-.735 1.36 1.36 0 0 1 .753-1.785 1.398 1.398 0 0 1 1.802.75c.29.69-.045 1.489-.744 1.771v-.001Zm.64 2.862a1.39 1.39 0 0 0 1.812.735 1.35 1.35 0 0 0 .744-1.77 1.396 1.396 0 0 0-1.8-.75 1.36 1.36 0 0 0-.755 1.785ZM24.734 15.3l.003-.003 1.751.906V13.66l-1.748.546-.005-.005a.923.923 0 0 0-.169-.17l-.005-.004.704-2.182h-2.527l.703 2.184-.004.004a.92.92 0 0 0-.17.17l-.004.005-1.749-.547v2.543l1.752-.906.003.003a.975.975 0 0 0 .18.177l-1.006 2.99s-.001.008-.003.01v.004a1.57 1.57 0 0 0-.072.472 1.616 1.616 0 0 0 1.409 1.592l.008.001.007.001.006.001a1.49 1.49 0 0 0 .411 0l.024-.003.01-.001a1.618 1.618 0 0 0 1.395-1.59c0-.164-.025-.323-.072-.473l-.014-.046.008.023.006.02a.028.028 0 0 0-.004-.011l-.002-.009a.454.454 0 0 0-.008-.023l-.994-2.957a.93.93 0 0 0 .18-.178h-.004Zm-3.882 3.607a1.39 1.39 0 0 1-1.81.735 1.35 1.35 0 0 1-.745-1.771 1.396 1.396 0 0 1 1.8-.75 1.36 1.36 0 0 1 .755 1.786Zm-5.514 2.914a1.39 1.39 0 0 0 1.81-.735 1.36 1.36 0 0 0-.753-1.785 1.398 1.398 0 0 0-1.802.75c-.29.69.046 1.489.744 1.771v-.001Zm-.643 2.862a1.39 1.39 0 0 1-1.81.735 1.35 1.35 0 0 1-.745-1.77 1.396 1.396 0 0 1 1.8-.75 1.36 1.36 0 0 1 .755 1.785Zm9.303 8.833c3.315 0 6.451.22 9.246.614.792-3.289 1.76-5.17 2.757-6.513l-1.878-.659c.186.94.216 1.377.008 1.981-.31-.298-.604-.848-.832-1.686l-.909 2.986c.553-.375.98-.617 1.468-.63-.866 1.84-1.947 2.312-2.65 2.185-.855-.154-1.248-.906-1.116-1.546.197-.904 1.139-1.14 1.577-.088.84-1.69-.586-2.217-1.504-1.717 1.41-1.386 1.572-2.618.434-4.108-1.585 1.195-1.604 2.377-.891 4.042-.926-1.044-2.367-.483-1.846 1.203.668-1.02 1.553-.378 1.414.59-.118.843-1.247 1.524-2.654 1.403-2.016-.18-2.137-1.552-2.187-2.686.495-.091 1.388.362 2.15 1.415l.28-3.166c-.828.85-1.58 1.011-2.416 1.037.279-.855 1.557-2.257 1.557-2.257h-4.01s1.278 1.4 1.557 2.257c-.835-.026-1.587-.187-2.416-1.037l.28 3.166c.762-1.053 1.655-1.505 2.15-1.415-.05 1.134-.17 2.506-2.187 2.686-1.407.12-2.536-.56-2.654-1.403-.14-.968.746-1.61 1.413-.59.52-1.688-.921-2.248-1.847-1.203.715-1.665.696-2.847-.891-4.042-1.14 1.491-.978 2.723.432 4.108-.918-.5-2.344.027-1.502 1.717.44-1.051 1.38-.815 1.577.088.134.638-.261 1.39-1.117 1.546-.7.128-1.782-.346-2.649-2.185.489.011.915.255 1.47.63l-.91-2.986c-.23.838-.522 1.388-.832 1.686-.21-.604-.18-1.042.007-1.981l-1.876.66c.998 1.34 1.963 3.225 2.755 6.512 2.795-.393 5.93-.614 9.242-.614Zm0 0h.001-.001ZM6.5 24c0-9.665 7.835-17.5 17.5-17.5S41.5 14.335 41.5 24 33.665 41.5 24 41.5 6.5 33.665 6.5 24ZM24 3.5C12.678 3.5 3.5 12.678 3.5 24S12.678 44.5 24 44.5 44.5 35.322 44.5 24 35.322 3.5 24 3.5Z" clip-rule="evenodd"/>
+        </g>
+        <defs>
+          <clipPath id="a">
+            <path fill="#fff" d="M0 0h48v48H0z"/>
+          </clipPath>
+        </defs>
+      </svg>
+    </div>
+  </div>
+  
+  
+  <script type="text/javascript">
+ document.getElementById('mouse-control').addEventListener('mousemove', function (e) {
+    let controlRect = this.getBoundingClientRect(); // Bounding box of mouse-control area
+    let badge = document.querySelector('.badge-container');
+    let img = document.querySelector('.badge-background img');
+
+    let badgeRect = badge.getBoundingClientRect(); // Get badge dimensions
+    let imageWidth = img.naturalWidth; // Spectrum image width
+    let imageHeight = img.naturalHeight; // Spectrum image height
+
+    // Calculate mouse position relative to the mouse-control area
+    let mouseX = e.clientX - controlRect.left;
+    let mouseY = e.clientY - controlRect.top;
+
+    // Get dimensions of mouse-control & badge-container
+    let controlWidth = controlRect.width;
+    let controlHeight = controlRect.height;
+    let badgeWidth = badgeRect.width;
+    let badgeHeight = badgeRect.height;
+
+    // Calculate the maximum offset the image needs to move within the badge
+    let maxMoveX = imageWidth - badgeWidth;
+    let maxMoveY = imageHeight - badgeHeight;
+
+    // Calculate new image position based on the mouse position mapped proportionally
+    let offsetX = (mouseX / controlWidth) * maxMoveX;
+    let offsetY = (mouseY / controlHeight) * maxMoveY;
+
+    // Move the spectrum background image
+    img.style.transform = `translate(${-offsetX}px, ${-offsetY}px)`;
+});
+
+
+  </script>
+
+
+</body>
+</html>
