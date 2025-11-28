@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergence</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: #FBFAF6;
+            overflow: hidden;
+        }
+        
+        #canvas-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100vh;
+        }
+        
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // Scene setup
+        const container = document.getElementById('canvas-container');
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xF5F5F3);
+        
+        // Isometric-style camera
+        const aspect = window.innerWidth / window.innerHeight;
+        const frustumSize = 18;
+        const camera = new THREE.OrthographicCamera(
+            frustumSize * aspect / -2,
+            frustumSize * aspect / 2,
+            frustumSize / 2,
+            frustumSize / -2,
+            0.1,
+            1000
+        );
+        
+        // Isometric angle
+        camera.position.set(20, 20, 20);
+        camera.lookAt(0, 0, 0);
+
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true 
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+
+        // Color palette - purple/violet shades
+        const lightestPurple = new THREE.Color(0xBEB4FA); // light purple - at base height
+        const darkestPurple = new THREE.Color(0x5B4ED6); // deep purple/blue - at peak height
+        
+        const baseColor = new THREE.Color(0xFAFAF8); // off-white for inactive cubes
+        const edgeColor = new THREE.Color(0x4137FF); // darker edge color for better visibility
+
+        // Grid parameters
+        const gridSize = 20;
+        const gap = 0.75; // Adjusted to maintain spacing with larger cubes (was 0.52)
+        const cubeSize = 0.7; // Increased from 0.48
+
+        // Create edge geometry for wireframe look
+        const edgesGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize));
+
+        // Cubes storage
+        const cubes = [];
+        const cubeGroup = new THREE.Group();
+
+        // Create cubes
+        const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
+
+        cubeGroup.rotation.y = Math.PI * 0.25;
+        for (let x = 0; x < gridSize; x++) {
+            for (let z = 0; z < gridSize; z++) {
+                // Main cube - start with off-white
+                const material = new THREE.MeshBasicMaterial({
+                    color: baseColor,
+                    transparent: true,
+                    opacity: 1
+                });
+
+                const cube = new THREE.Mesh(geometry, material);
+                
+                // Edge lines - subtle gray outlines
+                const edgeMaterial = new THREE.LineBasicMaterial({ 
+                    color: edgeColor,
+                    transparent: true,
+                    opacity: 0.6
+                });
+                const edges = new THREE.LineSegments(edgesGeometry, edgeMaterial);
+                cube.add(edges);
+                
+                const posX = (x - gridSize / 2 + 0.5) * gap;
+                const posZ = (z - gridSize / 2 + 0.5) * gap;
+                
+                cube.position.set(posX, cubeSize / 2, posZ);
+                
+                cube.userData = {
+                    originalY: cubeSize / 2,
+                    targetRise: 0,
+                    currentRise: 0,
+                    activation: 0,
+                    targetActivation: 0,
+                    phaseOffset: Math.random() * Math.PI * 2,
+                    gridX: x,
+                    gridZ: z,
+                    baseColor: baseColor.clone(),
+                    edges: edges
+                };
+
+                cubes.push(cube);
+                cubeGroup.add(cube);
+            }
+        }
+
+        scene.add(cubeGroup);
+
+        // Add some floating cubes outside the grid (like in reference)
+        // const floatingCubes = [];
+        // const floatingPositions = [
+        //     { x: -6, y: 1.5, z: -4 },
+        //     { x: 7, y: 0.8, z: -5 },
+        //     { x: 6, y: 1.2, z: 5.5 },
+        //     { x: -5.5, y: 0.6, z: 5 },
+        //     { x: 7.5, y: 1, z: 6 },
+        // ];
+
+        // floatingPositions.forEach((pos, i) => {
+        //     const mat = new THREE.MeshBasicMaterial({
+        //         color: baseColor,
+        //         transparent: true,
+        //         opacity: 0.8
+        //     });
+        //     const floatCube = new THREE.Mesh(geometry, mat);
+        //     const edgeMat = new THREE.LineBasicMaterial({ 
+        //         color: edgeColor,
+        //         transparent: true,
+        //         opacity: 0.5
+        //     });
+        //     const edges = new THREE.LineSegments(edgesGeometry, edgeMat);
+        //     floatCube.add(edges);
+        //     floatCube.position.set(pos.x, pos.y, pos.z);
+        //     floatCube.userData = {
+        //         originalY: pos.y,
+        //         phaseOffset: Math.random() * Math.PI * 2,
+        //         floatSpeed: 0.3 + Math.random() * 0.3
+        //     };
+        //     floatingCubes.push(floatCube);
+        //     scene.add(floatCube);
+        // });
+
+        // Soft lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.9);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        directionalLight.position.set(5, 10, 5);
+        scene.add(directionalLight);
+
+        // Wave system
+        let waveCenter = { x: gridSize / 2, z: gridSize / 2 };
+        let waveTime = 0;
+        let waveActive = false; // Start with no active wave
+        
+        // Calculate when wave finishes: max distance across grid + wave width
+        const maxGridDistance = Math.sqrt(Math.pow(gridSize - 1, 2) + Math.pow(gridSize - 1, 2)) * gap;
+        const waveWidth = 3.0;
+        const waveSpeed = 8; // waveRadius = waveTime * waveSpeed
+        const waveFinishTime = (maxGridDistance + waveWidth) / waveSpeed;
+        const waveSettleTime = waveFinishTime + 0.5; // Small buffer to ensure cubes settle
+
+        function triggerWave(force = false, position = null) {
+            // Only trigger if no wave is active, or if forced (user click)
+            if (!waveActive || force) {
+                if (position) {
+                    // Use provided position (from click)
+                    waveCenter = position;
+                } else {
+                    // Random position for automatic waves
+                    waveCenter = {
+                        x: Math.floor(Math.random() * gridSize),
+                        z: Math.floor(Math.random() * gridSize)
+                    };
+                }
+                waveTime = 0;
+                waveActive = true;
+            }
+        }
+
+        // Start first wave after initial delay
+        setTimeout(() => {
+            triggerWave(true);
+        }, 800);
+        
+        // Auto-trigger waves only when previous wave has finished
+        setInterval(() => {
+            // Only auto-trigger if no wave is currently active
+            if (!waveActive && Math.random() > 0.25) {
+                triggerWave();
+            }
+        }, 3500);
+
+        // Animation
+        let time = 0;
+
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            time += 0.016;
+            
+            // Check if current wave has finished and cubes have settled
+            if (waveActive && waveTime > waveSettleTime) {
+                waveActive = false;
+            }
+            
+            // Only increment wave time when wave is active
+            if (waveActive) {
+                waveTime += 0.018;
+            }
+
+            // Update each cube
+            cubes.forEach((cube) => {
+                const userData = cube.userData;
+                
+                // Only calculate wave effects when a wave is active
+                let waveIntensity = 0;
+                if (waveActive) {
+                    // Distance from wave center
+                    const dx = userData.gridX - waveCenter.x;
+                    const dz = userData.gridZ - waveCenter.z;
+                    const distance = Math.sqrt(dx * dx + dz * dz);
+                    
+                    // Wave effect - ripple outward
+                    const waveRadius = waveTime * waveSpeed;
+                    waveIntensity = Math.max(0, 1 - Math.abs(distance - waveRadius) / waveWidth);
+                }
+                
+                // Activation only from waves (no organic pulsing)
+                userData.targetActivation = waveIntensity * 0.9;
+                
+                // Smooth transition
+                userData.activation += (userData.targetActivation - userData.activation) * 0.08;
+                
+                // Rise based on activation
+                const riseThreshold = 0.15;
+                if (userData.activation > riseThreshold) {
+                    userData.targetRise = (userData.activation - riseThreshold) * 3.0;
+                } else {
+                    userData.targetRise = 0;
+                }
+                
+                userData.currentRise += (userData.targetRise - userData.currentRise) * 0.06;
+                
+                // Apply position
+                cube.position.y = userData.originalY + userData.currentRise;
+                
+                // Color transition based on height: white at base, darkest purple at peak
+                // Max possible rise: (maxActivation - riseThreshold) * 3.0 = (0.9 - 0.15) * 3.0 = 2.25
+                const maxRise = 2.25;
+                const heightRatio = Math.min(userData.currentRise / maxRise, 1);
+                
+                // Interpolate from baseColor (white) to darkest purple (at peak)
+                cube.material.color.copy(userData.baseColor).lerp(darkestPurple, heightRatio);
+                
+                // Edge color transitions from gray to purple based on height
+                userData.edges.material.color.copy(edgeColor).lerp(darkestPurple, heightRatio * 0.7);
+                userData.edges.material.opacity = 0.6 + heightRatio * 0.4;
+            });
+
+            // Animate floating cubes
+            // floatingCubes.forEach((cube) => {
+            //     const ud = cube.userData;
+            //     cube.position.y = ud.originalY + Math.sin(time * ud.floatSpeed + ud.phaseOffset) * 0.15;
+            //     cube.rotation.y = Math.sin(time * 0.2 + ud.phaseOffset) * 0.1;
+            // });
+
+            // Very slow camera rotation for subtle movement
+            const cameraAngle = time * 0.02;
+            const cameraRadius = 28;
+            camera.position.x = Math.sin(cameraAngle) * cameraRadius;
+            camera.position.z = Math.cos(cameraAngle) * cameraRadius;
+            camera.position.y = 28;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Raycaster for detecting clicked cubes
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            const aspect = window.innerWidth / window.innerHeight;
+            camera.left = frustumSize * aspect / -2;
+            camera.right = frustumSize * aspect / 2;
+            camera.top = frustumSize / 2;
+            camera.bottom = frustumSize / -2;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // Click to trigger wave from clicked cube position
+        window.addEventListener('click', (event) => {
+            // Calculate mouse position in normalized device coordinates (-1 to +1)
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+            
+            // Update raycaster with camera and mouse position
+            raycaster.setFromCamera(mouse, camera);
+            
+            // Find intersected cubes
+            const intersects = raycaster.intersectObjects(cubes);
+            
+            if (intersects.length > 0) {
+                // Get the first intersected cube
+                const clickedCube = intersects[0].object;
+                const userData = clickedCube.userData;
+                
+                // Trigger wave from clicked cube's grid position
+                triggerWave(true, {
+                    x: userData.gridX,
+                    z: userData.gridZ
+                });
+            } else {
+                // If no cube clicked, trigger from random position (fallback)
+                triggerWave(true);
+            }
+        });
+    </script>
+</body>
+</html>
