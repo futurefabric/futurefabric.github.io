@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Poolside Logo - Three.js</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #F6F8FA;
+            font-family: Arial, sans-serif;
+        }
+        #container {
+            width: 100vw;
+            height: 100vh;
+        }
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #B3B0A9;
+            font-size: 18px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">Loading model...</div>
+    <div id="container"></div>
+
+    <!-- Three.js and GLTFLoader from CDN -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // ========== COLOR CONSTANTS ==========
+        const COLORS = {
+            BACKGROUND: 0xF6F8FA,
+            FRONT_FACE: 0x6670FE,        // Front face fill color
+            BACK_FACE: 0x000000,         // Back face fill color
+            SIDE_FACES: 0x6670FE,        // Side face fill color
+            FRONT_FACE_OPACITY: 0.05,     // Opacity for front face (0.0 = transparent, 1.0 = opaque)
+            BACK_FACE_OPACITY: 0.05,      // Opacity for back face (0.0 = transparent, 1.0 = opaque)
+            SIDE_FACES_OPACITY: 1.0,     // Opacity for side faces (0.0 = transparent, 1.0 = opaque)
+            FRONT_OUTLINE: 0x6670FE,     // Outline color for front overlay geometry
+            BACK_OUTLINE: 0x6670FE,      // Outline color for back overlay geometry
+            FRONT_OUTLINE_OPACITY: 1.0,  // Opacity for front outline (0.0 = transparent, 1.0 = opaque)
+            BACK_OUTLINE_OPACITY: 0.75,  // Opacity for back outline (0.0 = transparent, 1.0 = opaque)
+            MAIN_GEOMETRY_OPACITY: 0.05  // Opacity for main geometry fill (0.0 = transparent, 1.0 = opaque) - DEPRECATED, use face-specific opacities
+        };
+
+        // ========== OVERLAY GEOMETRY SETTINGS ==========
+        // Set these to the filenames of your separate front/back overlay geometries
+        // Leave as null/empty string if you don't want to load that overlay
+        const OVERLAY_CONFIG = {
+            FRONT_GEOMETRY: 'poolside-logo-face.glb',  // e.g., 'front-overlay.glb'
+            BACK_GEOMETRY: 'poolside-logo-face.glb',   // e.g., 'back-overlay.glb'
+            FRONT_Z_OFFSET: 0.0,  // Small offset to position in front (adjust as needed)
+            BACK_Z_OFFSET: -0.05   // Small offset to position in back (adjust as needed)
+        };
+
+        // Scene setup
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(COLORS.BACKGROUND);
+
+        // Orthographic Camera for flat, isometric-like view
+        const aspect = window.innerWidth / window.innerHeight;
+        const viewSize = 4.0; // Reduced to zoom in (twice as close)
+        const camera = new THREE.OrthographicCamera(
+            -viewSize * aspect,  // left
+            viewSize * aspect,   // right
+            viewSize,            // top
+            -viewSize,           // bottom
+            0.1,                  // near
+            1000                  // far
+        );
+        camera.position.set(0, 0, 5);
+
+        // Renderer with enhanced settings for polished look
+        const renderer = new THREE.WebGLRenderer({ 
+            antialias: true,
+            alpha: true,  // Enable alpha for transparency
+            powerPreference: "high-performance"
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)); // Limit pixel ratio for performance
+        renderer.shadowMap.enabled = false; // No shadows for clean look
+        document.getElementById('container').appendChild(renderer.domElement);
+
+        // No lighting needed - using flat colors
+
+        // Load GLB model
+        const loader = new GLTFLoader();
+        let model = null;
+        let frontOverlay = null;
+        let backOverlay = null;
+
+        loader.load(
+            'poolside-logo.glb',
+            function(gltf) {
+                model = gltf.scene;
+                
+                // Flat color shader - no lighting or reflections
+                // Front/back faces: #F6F8FA, Side faces: #B3B0A9
+                const vertexShader = `
+                    varying vec3 vNormal;
+                    
+                    void main() {
+                        vNormal = normalize(normalMatrix * normal);
+                        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                    }
+                `;
+                
+                const fragmentShader = `
+                    uniform vec3 frontColor;
+                    uniform vec3 backColor;
+                    uniform vec3 sideColor;
+                    uniform float frontOpacity;
+                    uniform float backOpacity;
+                    uniform float sideOpacity;
+                    varying vec3 vNormal;
+                    
+                    void main() {
+                        vec3 normal = normalize(vNormal);
+                        
+                        // Calculate face orientation
+                        // Front faces have positive Z normal, back faces have negative Z normal
+                        float zComponent = normal.z;
+                        float frontBackFactor = abs(zComponent);
+                        
+                        // Determine if it's front or back face
+                        vec3 frontBackColor = zComponent > 0.0 ? frontColor : backColor;
+                        float frontBackOpacity = zComponent > 0.0 ? frontOpacity : backOpacity;
+                        
+                        // Mix colors and opacity based on face orientation - smooth transition
+                        vec3 color = mix(sideColor, frontBackColor, smoothstep(0.2, 0.7, frontBackFactor));
+                        float opacity = mix(sideOpacity, frontBackOpacity, smoothstep(0.2, 0.7, frontBackFactor));
+                        
+                        gl_FragColor = vec4(color, opacity);
+                    }
+                `;
+                
+                // Function to apply flat face-based coloring (no outlines)
+                function applyFaceColors(object) {
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            const frontColor = new THREE.Color(COLORS.FRONT_FACE);
+                            const backColor = new THREE.Color(COLORS.BACK_FACE);
+                            const sideColor = new THREE.Color(COLORS.SIDE_FACES);
+                            
+                            // Apply fill material with transparency
+                            child.material = new THREE.ShaderMaterial({
+                                vertexShader: vertexShader,
+                                fragmentShader: fragmentShader,
+                                uniforms: {
+                                    frontColor: { value: frontColor },
+                                    backColor: { value: backColor },
+                                    sideColor: { value: sideColor },
+                                    frontOpacity: { value: COLORS.FRONT_FACE_OPACITY },
+                                    backOpacity: { value: COLORS.BACK_FACE_OPACITY },
+                                    sideOpacity: { value: COLORS.SIDE_FACES_OPACITY }
+                                },
+                                side: THREE.DoubleSide,  // Render both sides
+                                transparent: true,        // Enable transparency
+                                depthWrite: false        // Improve transparency rendering
+                            });
+                        }
+                    });
+                }
+                
+                // Function to add outlines to overlay geometry
+                function addOutlinesToOverlay(object, zOffset = 0, outlineColor = COLORS.FRONT_OUTLINE, outlineOpacity = 1.0) {
+                    object.traverse((child) => {
+                        if (child.isMesh) {
+                            // Make overlay geometry invisible (transparent fill)
+                            child.material = new THREE.MeshBasicMaterial({
+                                color: COLORS.FRONT_FACE,
+                                transparent: true,
+                                opacity: 0  // Invisible fill, only outlines visible
+                            });
+                            
+                            // Create edges geometry for outlines
+                            const edgesGeometry = new THREE.EdgesGeometry(child.geometry, 1);
+                            const outlineMaterial = new THREE.LineBasicMaterial({ 
+                                color: outlineColor,
+                                linewidth: 1,
+                                transparent: outlineOpacity < 1.0,
+                                opacity: outlineOpacity
+                            });
+                            const edges = new THREE.LineSegments(edgesGeometry, outlineMaterial);
+                            
+                            // Copy transform and apply Z offset
+                            edges.position.copy(child.position);
+                            edges.position.z += zOffset;
+                            edges.rotation.copy(child.rotation);
+                            edges.scale.copy(child.scale);
+                            
+                            // Add edges as sibling
+                            child.parent.add(edges);
+                        }
+                    });
+                }
+                
+                // Apply face-based coloring (no outlines)
+                applyFaceColors(model);
+                scene.add(model);
+                
+                // Store model bounding box for positioning overlays
+                const box = new THREE.Box3().setFromObject(model);
+                const center = box.getCenter(new THREE.Vector3());
+                const size = box.getSize(new THREE.Vector3());
+
+                // Center the model
+                model.position.x += (model.position.x - center.x);
+                model.position.y += (model.position.y - center.y);
+                model.position.z += (model.position.z - center.z);
+
+                // Scale to make it smaller (reduced from 3 to 1.2)
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 1.2 / maxDim;
+                model.scale.multiplyScalar(scale);
+
+                // Load overlay geometries if configured
+                let overlayCount = 0;
+                const totalOverlays = (OVERLAY_CONFIG.FRONT_GEOMETRY ? 1 : 0) + (OVERLAY_CONFIG.BACK_GEOMETRY ? 1 : 0);
+                
+                function checkOverlaysLoaded() {
+                    overlayCount++;
+                    if (overlayCount >= totalOverlays) {
+                        document.getElementById('loading').style.display = 'none';
+                    }
+                }
+                
+                // Load front overlay if configured
+                if (OVERLAY_CONFIG.FRONT_GEOMETRY) {
+                    loader.load(
+                        OVERLAY_CONFIG.FRONT_GEOMETRY,
+                        function(gltf) {
+                            frontOverlay = gltf.scene;
+                            
+                            // Match the main model's transform
+                            frontOverlay.position.copy(model.position);
+                            frontOverlay.rotation.copy(model.rotation);
+                            frontOverlay.scale.copy(model.scale);
+                            
+                            // Apply Z offset to position in front
+                            frontOverlay.position.z += OVERLAY_CONFIG.FRONT_Z_OFFSET;
+                            
+                            // Add outlines with front outline color and opacity
+                            addOutlinesToOverlay(frontOverlay, OVERLAY_CONFIG.FRONT_Z_OFFSET, COLORS.FRONT_OUTLINE, COLORS.FRONT_OUTLINE_OPACITY);
+                            
+                            scene.add(frontOverlay);
+                            checkOverlaysLoaded();
+                        },
+                        undefined,
+                        function(error) {
+                            console.warn('Could not load front overlay:', error);
+                            checkOverlaysLoaded();
+                        }
+                    );
+                }
+                
+                // Load back overlay if configured
+                if (OVERLAY_CONFIG.BACK_GEOMETRY) {
+                    loader.load(
+                        OVERLAY_CONFIG.BACK_GEOMETRY,
+                        function(gltf) {
+                            backOverlay = gltf.scene;
+                            
+                            // Match the main model's transform
+                            backOverlay.position.copy(model.position);
+                            backOverlay.rotation.copy(model.rotation);
+                            backOverlay.scale.copy(model.scale);
+                            
+                            // Apply Z offset to position in back
+                            backOverlay.position.z += OVERLAY_CONFIG.BACK_Z_OFFSET;
+                            
+                            // Add outlines with back outline color and opacity
+                            addOutlinesToOverlay(backOverlay, OVERLAY_CONFIG.BACK_Z_OFFSET, COLORS.BACK_OUTLINE, COLORS.BACK_OUTLINE_OPACITY);
+                            
+                            scene.add(backOverlay);
+                            checkOverlaysLoaded();
+                        },
+                        undefined,
+                        function(error) {
+                            console.warn('Could not load back overlay:', error);
+                            checkOverlaysLoaded();
+                        }
+                    );
+                }
+                
+                // If no overlays, hide loading immediately
+                if (totalOverlays === 0) {
+                    document.getElementById('loading').style.display = 'none';
+                }
+
+                // For orthographic camera, position doesn't affect size, but we still need to look at the model
+                camera.position.set(0, 0, 5);
+                camera.lookAt(0, 0, 0);
+            },
+            function(xhr) {
+                // Progress callback
+                const percentComplete = (xhr.loaded / xhr.total) * 100;
+                document.getElementById('loading').textContent = `Loading model... ${Math.round(percentComplete)}%`;
+            },
+            function(error) {
+                console.error('Error loading model:', error);
+                document.getElementById('loading').textContent = 'Error loading model. Check console for details.';
+            }
+        );
+
+        // Mouse controls for rotation
+        let mouseX = 0;
+        let mouseY = 0;
+        let targetRotationX = 0;
+        let targetRotationY = 0;
+
+        document.addEventListener('mousemove', (event) => {
+            mouseX = (event.clientX / window.innerWidth) * 2 - 1;
+            mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
+            // Increased rotation range for more rotation (approximately 10-15 degrees more)
+            targetRotationY = mouseX * 0.8;
+            targetRotationX = mouseY * 0.8;
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (model) {
+                // Smooth rotation based on mouse position
+                model.rotation.y += (targetRotationY - model.rotation.y) * 0.05;
+                model.rotation.x += (targetRotationX - model.rotation.x) * 0.05;
+                
+                // Rotate overlays to match main model
+                if (frontOverlay) {
+                    frontOverlay.rotation.copy(model.rotation);
+                }
+                if (backOverlay) {
+                    backOverlay.rotation.copy(model.rotation);
+                }
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            const aspect = window.innerWidth / window.innerHeight;
+            const viewSize = 4.0; // Match the initial viewSize
+            camera.left = -viewSize * aspect;
+            camera.right = viewSize * aspect;
+            camera.top = viewSize;
+            camera.bottom = -viewSize;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>
