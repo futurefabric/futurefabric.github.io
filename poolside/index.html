@@ -27,10 +27,50 @@
         canvas {
             display: block;
         }
+        
+        #algorithm-selector {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.9);
+            border: 2px solid #4137FF;
+            border-radius: 8px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        #algorithm-selector select {
+            border: none;
+            background: transparent;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            outline: none;
+            font-weight: 500;
+        }
+        
+        #algorithm-selector label {
+            margin-right: 8px;
+            color: #666;
+        }
     </style>
 </head>
 <body>
     <div id="canvas-container"></div>
+    <div id="algorithm-selector">
+        <label for="algorithm-select">Animation:</label>
+        <select id="algorithm-select">
+            <option value="CENTER_OUT_WAVE">Center Out Wave</option>
+            <option value="ROW_WAVE" selected>Row Wave</option>
+            <option value="RANDOM_SEQUENCE">Random Sequence</option>
+            <option value="SNAKE_PATH">Snake Path</option>
+        </select>
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
@@ -71,9 +111,9 @@
         const edgeColor = new THREE.Color(0x4137FF); // darker edge color for better visibility
 
         // Grid parameters
-        const gridSize = 20;
-        const gap = 0.75; // Adjusted to maintain spacing with larger cubes (was 0.52)
-        const cubeSize = 0.7; // Increased from 0.48
+        const gridSize = 15;
+        const gap = 0.5; // Adjusted to maintain spacing with larger cubes (was 0.52)
+        const cubeSize = 0.5; // Increased from 0.48
 
         // Create edge geometry for wireframe look
         const edgesGeometry = new THREE.EdgesGeometry(new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize));
@@ -81,6 +121,78 @@
         // Cubes storage
         const cubes = [];
         const cubeGroup = new THREE.Group();
+
+        // Create random sequence for RANDOM_SEQUENCE algorithm
+        const totalCubes = gridSize * gridSize;
+        const randomSequence = Array.from({ length: totalCubes }, (_, i) => i);
+        // Shuffle the sequence
+        for (let i = randomSequence.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [randomSequence[i], randomSequence[j]] = [randomSequence[j], randomSequence[i]];
+        }
+        let sequenceIndex = 0;
+
+        // Create snake path for SNAKE_PATH algorithm
+        // Generate a spiral path that winds through the grid
+        const snakePath = new Map(); // Maps grid position to sequence index
+        const visited = new Set();
+        let snakeIndex = 0;
+        
+        // Spiral pattern: start from center and spiral outward
+        const centerX = Math.floor(gridSize / 2);
+        const centerZ = Math.floor(gridSize / 2);
+        
+        // Create a 2D array to track visited cells
+        const grid = Array(gridSize).fill(null).map(() => Array(gridSize).fill(false));
+        
+        // Directions: right, down, left, up
+        const directions = [
+            [0, 1],   // right
+            [1, 0],   // down
+            [0, -1],  // left
+            [-1, 0]   // up
+        ];
+        
+        let x = centerX;
+        let z = centerZ;
+        let dir = 0;
+        let stepSize = 1;
+        let stepsInDirection = 0;
+        let stepCount = 0;
+        
+        // Spiral outward - ensure we visit all cubes
+        while (snakeIndex < totalCubes) {
+            // Visit current cell if valid and not visited
+            if (x >= 0 && x < gridSize && z >= 0 && z < gridSize && !grid[x][z]) {
+                const key = `${x},${z}`;
+                snakePath.set(key, snakeIndex++);
+                grid[x][z] = true;
+            }
+            
+            // Try to move in current direction
+            const nextX = x + directions[dir][0];
+            const nextZ = z + directions[dir][1];
+            
+            stepsInDirection++;
+            
+            // Check if we should turn
+            if (stepsInDirection >= stepSize || 
+                nextX < 0 || nextX >= gridSize || 
+                nextZ < 0 || nextZ >= gridSize || 
+                grid[nextX][nextZ]) {
+                // Turn
+                dir = (dir + 1) % 4;
+                stepsInDirection = 0;
+                stepCount++;
+                if (stepCount % 2 === 0) {
+                    stepSize++;
+                }
+            } else {
+                // Move forward
+                x = nextX;
+                z = nextZ;
+            }
+        }
 
         // Create cubes
         const geometry = new THREE.BoxGeometry(cubeSize, cubeSize, cubeSize);
@@ -111,6 +223,9 @@
                 
                 cube.position.set(posX, cubeSize / 2, posZ);
                 
+                const snakeKey = `${x},${z}`;
+                const snakePathIndex = snakePath.has(snakeKey) ? snakePath.get(snakeKey) : 0;
+                
                 cube.userData = {
                     originalY: cubeSize / 2,
                     targetRise: 0,
@@ -121,7 +236,9 @@
                     gridX: x,
                     gridZ: z,
                     baseColor: baseColor.clone(),
-                    edges: edges
+                    edges: edges,
+                    sequenceIndex: randomSequence[sequenceIndex++], // Random sequence index for RANDOM_SEQUENCE algorithm
+                    snakePathIndex: snakePathIndex // Snake path index for SNAKE_PATH algorithm
                 };
 
                 cubes.push(cube);
@@ -181,9 +298,104 @@
         // Calculate when wave finishes: max distance across grid + wave width
         const maxGridDistance = Math.sqrt(Math.pow(gridSize - 1, 2) + Math.pow(gridSize - 1, 2)) * gap;
         const waveWidth = 3.0;
-        const waveSpeed = 8; // waveRadius = waveTime * waveSpeed
+        const waveSpeed = 5; // waveRadius = waveTime * waveSpeed
         const waveFinishTime = (maxGridDistance + waveWidth) / waveSpeed;
         const waveSettleTime = waveFinishTime + 0.5; // Small buffer to ensure cubes settle
+
+        // Wave animation algorithms
+        // Each algorithm function receives: (userData, waveCenter, waveTime, waveSpeed, waveWidth)
+        // and returns a waveIntensity value (0 to 1)
+        const WAVE_ALGORITHMS = {
+            CENTER_OUT_WAVE: function(userData, waveCenter, waveTime, waveSpeed, waveWidth) {
+                // Distance from wave center
+                const dx = userData.gridX - waveCenter.x;
+                const dz = userData.gridZ - waveCenter.z;
+                const distance = Math.sqrt(dx * dx + dz * dz);
+                
+                // Wave effect - ripple outward
+                const waveRadius = waveTime * waveSpeed;
+                return Math.max(0, 1 - Math.abs(distance - waveRadius) / waveWidth);
+            },
+            
+            ROW_WAVE: function(userData, waveCenter, waveTime, waveSpeed, waveWidth) {
+                // Calculate row distance (horizontal rows, same Z coordinate)
+                const rowDistance = Math.abs(userData.gridZ - waveCenter.z);
+                
+                // Each row activates sequentially based on its distance from center
+                // Row 0 activates immediately, row 1 after delay, etc.
+                const rowDelay = rowDistance * 0.3; // Delay per row
+                const rowActivationTime = waveTime - rowDelay;
+                
+                // Only activate if this row's time has come
+                if (rowActivationTime < 0) {
+                    return 0;
+                }
+                
+                // All cubes in the row activate together with same intensity
+                // Intensity peaks when row activates, then fades as wave progresses
+                // Use waveWidth to control how long the intensity lasts
+                const intensity = Math.max(0, 1 - rowActivationTime * waveSpeed / waveWidth);
+                
+                return intensity;
+            },
+            
+            RANDOM_SEQUENCE: function(userData, waveCenter, waveTime, waveSpeed, waveWidth) {
+                // Each cube activates based on its random sequence index
+                const sequenceIndex = userData.sequenceIndex;
+                const totalCubes = gridSize * gridSize;
+                
+                // Delay based on sequence position (similar timing to ROW_WAVE)
+                const cubeDelay = (sequenceIndex / totalCubes) * (maxGridDistance / waveSpeed);
+                const cubeActivationTime = waveTime - cubeDelay;
+                
+                // Only activate if this cube's time has come
+                if (cubeActivationTime < 0) {
+                    return 0;
+                }
+                
+                // Intensity peaks when cube activates, then fades as wave progresses
+                const intensity = Math.max(0, 1 - cubeActivationTime * waveSpeed / waveWidth);
+                
+                return intensity;
+            },
+            
+            SNAKE_PATH: function(userData, waveCenter, waveTime, waveSpeed, waveWidth) {
+                // Each cube activates based on its position in the snake path
+                const snakePathIndex = userData.snakePathIndex;
+                const totalCubes = gridSize * gridSize;
+                
+                // Delay based on snake path position (similar timing to other sequential algorithms)
+                // Use a tighter spacing for smoother snake effect
+                const cubeDelay = (snakePathIndex / totalCubes) * (maxGridDistance / waveSpeed) * 0.8;
+                const cubeActivationTime = waveTime - cubeDelay;
+                
+                // Only activate if this cube's time has come
+                if (cubeActivationTime < 0) {
+                    return 0;
+                }
+                
+                // Intensity peaks when cube activates, then fades as snake progresses
+                // Slightly longer fade for smoother visual effect
+                const intensity = Math.max(0, 1 - cubeActivationTime * waveSpeed / (waveWidth * 1.2));
+                
+                return intensity;
+            }
+        };
+
+        // Select which algorithm to use (can be changed dynamically via UI)
+        let currentAlgorithm = WAVE_ALGORITHMS.ROW_WAVE; // Default algorithm
+        
+        // Algorithm selector UI handler
+        const algorithmSelect = document.getElementById('algorithm-select');
+        algorithmSelect.addEventListener('change', (event) => {
+            const selectedAlgorithm = event.target.value;
+            if (WAVE_ALGORITHMS[selectedAlgorithm]) {
+                currentAlgorithm = WAVE_ALGORITHMS[selectedAlgorithm];
+                // Reset wave when switching algorithms
+                waveActive = false;
+                waveTime = 0;
+            }
+        });
 
         function triggerWave(force = false, position = null) {
             // Only trigger if no wave is active, or if forced (user click)
@@ -241,14 +453,8 @@
                 // Only calculate wave effects when a wave is active
                 let waveIntensity = 0;
                 if (waveActive) {
-                    // Distance from wave center
-                    const dx = userData.gridX - waveCenter.x;
-                    const dz = userData.gridZ - waveCenter.z;
-                    const distance = Math.sqrt(dx * dx + dz * dz);
-                    
-                    // Wave effect - ripple outward
-                    const waveRadius = waveTime * waveSpeed;
-                    waveIntensity = Math.max(0, 1 - Math.abs(distance - waveRadius) / waveWidth);
+                    // Use the selected wave algorithm
+                    waveIntensity = currentAlgorithm(userData, waveCenter, waveTime, waveSpeed, waveWidth);
                 }
                 
                 // Activation only from waves (no organic pulsing)
@@ -260,7 +466,7 @@
                 // Rise based on activation
                 const riseThreshold = 0.15;
                 if (userData.activation > riseThreshold) {
-                    userData.targetRise = (userData.activation - riseThreshold) * 3.0;
+                    userData.targetRise = (userData.activation - riseThreshold) * 5.25;
                 } else {
                     userData.targetRise = 0;
                 }
@@ -271,8 +477,8 @@
                 cube.position.y = userData.originalY + userData.currentRise;
                 
                 // Color transition based on height: white at base, darkest purple at peak
-                // Max possible rise: (maxActivation - riseThreshold) * 3.0 = (0.9 - 0.15) * 3.0 = 2.25
-                const maxRise = 2.25;
+                // Color caps at maxRise (3.0), but cubes can rise higher (up to ~3.94)
+                const maxRise = 3.0;
                 const heightRatio = Math.min(userData.currentRise / maxRise, 1);
                 
                 // Interpolate from baseColor (white) to darkest purple (at peak)
